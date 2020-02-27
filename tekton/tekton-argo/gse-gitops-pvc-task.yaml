@@ -4,6 +4,10 @@ metadata:
   name: gse-gitops-pvc-task
 spec:
   inputs:
+    params:
+      - name: GITOPS_REPO
+        description: The location of the repo to be updated
+        default: https://github.com/davemulley/test-gitops.git
     resources:
       - type: image
         name: image
@@ -22,7 +26,7 @@ spec:
           echo Setting image to $NEW_IMAGE
           git config --global user.email "tekton@ibmcloud.com"
           git config --global user.name "Tekton Pipeline"
-          git clone -b master https://github.com/davemulley/test-gitops.git gitops
+          git clone -b master $(inputs.params.GITOPS_REPO) gitops
           cd gitops/cos-liberty/dev
           cp ./deploy.template ./deploy.yaml
           sed -i "s|<DOCKER_IMAGE>|${NEW_IMAGE}|g" ./deploy.yaml

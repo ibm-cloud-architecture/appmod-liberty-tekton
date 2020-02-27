@@ -110,7 +110,7 @@ The **build** phase made changes to source code and created the WebSphere Libert
 Detailed, step-by-step instructions on how to replicate these steps are provided [here](liberty-build.md)
 
 ## Deploy the Application using OpenShift Pipelines
-The following steps will deploy the modernized Customer Order Services application in a WebSphere Liberty container to a Red Hat OpenShift cluster using **OpenShift Pipelines**.
+The following steps will deploy the modernized Customer Order Services application in a WebSphere Liberty container to a Red Hat OpenShift cluster using **OpenShift Pipelines**. An alternative is to use **ArgoCD** for deployment. Click here to see the [Deploy the Application using OpenShift Pipelines and ArgoCD](#deploy-the-application-using-openshift-pipelines-and-argocd) option
 
 **DIAGRAM**
 
@@ -254,6 +254,36 @@ You will need the following:
 - ArgoCD **ADD A LINK TO INSTALL**
 - argocd CLI **ADD A LINK TO INSTALL**
 
+### Fork the appmod-gitops repository
+Fork the [appmod-gitops](https://github.com/ibm-cloud-architecture/appmod-gitops) GitHub repository in to your own github.com account
+
+1. Navigate to the [appmod-gitops](https://github.com/ibm-cloud-architecture/appmod-gitops) GitHub repository
+
+2. Click **Fork**
+
+  ![Run Pipeline](images/tekton-argo/fork1.jpg)
+
+3. Select the **Target** and wait for the fork process to complete
+
+### Create a github access token
+You will need to grant ArgoCD access to make changes to the newly forked Github repository
+
+1. Click on your GitHub.com account dropdown in the top right corner and select **Settings**
+
+2. Select **Developer settings** from the menu and then select **Personal Access Tokens**
+
+3. Click **Generate new token**
+
+  ![Token](images/tekton-argo/token2.jpg)
+
+4. Enter a `name` for the token in the `Note` field and select the `repo` scope as shown below. No other scopes are required. Click **Generate token**
+
+  ![Token 2](images/tekton-argo/token3.jpg)
+
+5. **Copy** the token and **keep** it for a later step. This is the only time the token will be visible to you.
+
+  ![Token 3](images/tekton-argo/token4.jpg)
+
 ### Getting the project repository
 You can clone the repository from its main GitHub repository page and checkout the appropriate branch for this version of the application.
 
@@ -302,10 +332,27 @@ oc new-project cos-liberty-tekton
 ```
 
 ### Create a secret for your github access token
-**come back to this**
+Edit the `tekton/tekton-argo/appmod-github-secret.yaml` file and set your `username` (to your github.com username) and `password` (to your **access token** created earlier)
+
 ```
-oc apply -f dm-github-secret.yaml
-oc patch serviceaccount pipeline -p '{"secrets": [{"name": "dm-github"}]}'
+apiVersion: v1
+kind: Secret
+metadata:
+  name: dm-github
+  annotations:
+    tekton.dev/git-0: https://github.com # Described below
+type: kubernetes.io/basic-auth
+stringData:
+  username: xxxxx  
+  password: xxxxx
+```
+
+Execute the commands below to create the secret and bind it to the service account that Tekton will be using to execute the Tasks.
+
+```
+cd tekton/tekton-argo
+oc apply -f appmod-github-secret.yaml
+oc patch serviceaccount pipeline -p '{"secrets": [{"name": "appmod-github"}]}'
 ```
 
 ### Create a service account
@@ -316,9 +363,6 @@ Issue the commands shown below to create the `websphere` service account and bin
 oc create serviceaccount websphere -n cos-liberty-tekton
 oc adm policy add-scc-to-user ibm-websphere-scc -z websphere -n cos-liberty-tekton
 ```
-
-### Modify the gse-build-pipeline-resources.yaml file
-**come back to this**
 
 ### Import the Tekton resources
 Import the Tekton `Tasks`, `Pipeline` and `PipelineResources` in to the project using the commands shown below:

@@ -53,6 +53,9 @@ spec:
           - name: image
             resource: docker-image
             from: [gse-build]
+      params:
+        - name: GITOPS_REPO
+          value: "false"
       runAfter:
         - gse-apply-manifests
           
