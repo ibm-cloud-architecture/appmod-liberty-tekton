@@ -110,7 +110,9 @@ The **build** phase made changes to source code and created the WebSphere Libert
 Detailed, step-by-step instructions on how to replicate these steps are provided [here](liberty-build.md)
 
 ## Deploy the Application using OpenShift Pipelines
-The following steps will deploy the modernized Customer Order Services application in a WebSphere Liberty container to a Red Hat OpenShift cluster.
+The following steps will deploy the modernized Customer Order Services application in a WebSphere Liberty container to a Red Hat OpenShift cluster using **OpenShift Pipelines**.
+
+**DIAGRAM**
 
 ### Prerequisites
 You will need the following:
@@ -189,15 +191,38 @@ oc apply -f gse-build-deploy-pvc-pipeline.yaml
 oc apply -f gse-build-pipeline-resources.yaml
 ```
 
-## Run the pipeline
-The recommended way to trigger the pipeline would be via a webhook (**link**) but for simplicity the command line can be used. Issue the command below to trigger the pipeline and accept the default values for `source` and `image`
+### Run the pipeline
+The recommended way to trigger the pipeline would be via a webhook (**link**) but for simplicity the command line can be used. Issue the command below to trigger the pipeline:
 
 ```
 tkn pipeline start  gse-build-deploy-pvc-pipeline -n cos-liberty-tekton
 ```
 
+When prompted, accept the default `git-source` value as shown below:
+
+  ![Pipeline](images/tekton-only/start-1.jpg)
+
+When prompted, accept the default `docker-image` value as shown below:
+
+  ![Pipeline1](images/tekton-only/start-2.jpg)
+
+### View the pipeline logs
+1. In the OpenShift Container Platform UI, change to the **Developer** view, select the `cos-liberty-tekton` project and then select **Pipelines**. Click on the **Last Run**
+
+  ![Pipeline](images/tekton-only/run-1.jpg)
+
+2. Select **Builds** and then select `cos-liberty-pipeline`
+
+  ![Pipeline Logs](images/tekton-only/run-2.jpg)
+
+3. The pipeline will execute and the logs will be displayed
+
+  ![Pipeline Logs](images/tekton-only/run-3.jpg)
+
+4. Once both the `gse-build` and `gse-apply-manifests` steps are complete, the pipeline is finished. Proceed to the [Validate the Application](#validate-the-application-on-4x) section
+
 ## Deploy the Application using OpenShift Pipelines and ArgoCD
-The following steps will deploy the modernized Customer Order Services application in a WebSphere Liberty container to a Red Hat OpenShift cluster.
+The following steps will deploy the modernized Customer Order Services application in a WebSphere Liberty container to a Red Hat OpenShift cluster using **OpenShift Pipelines** and **ArgoCD**.
 
 ### Prerequisites
 You will need the following:
@@ -329,61 +354,6 @@ tkn pipeline start  gse-build-gitops-pvc-pipeline -n cos-liberty-tekton
 
 
 
-### For 3.11 directions [click here](#run-the-pipeline-on-311); for 4.x directions [click here](#run-the-pipeline-on-4x).
-
-### Run the pipeline on 3.11
-The newly created pipeline can be started from the Red Hat OpenShift console which allows access to the Jenkins logs but also tracks the progress in the OCP console.
-
-1. Navigate to **Application Console --> Customer Order Services on Liberty - Build --> Builds --> Pipelines** and click the **Start Pipeline** button
-
-  ![Run Pipeline](images/liberty-deploy/run-pipeline.jpg)
-
-2. When the pipeline starts, click the `view log` link to go to the Jenkins administration console. Note that it may take a couple of minutes before the `view log` link appears on the first pipeline build
-
-  ![View Log](images/liberty-deploy/view-log.jpg)
-
-3. When prompted, log in with your OpenShift account and grant the required access permissions. The Jenkins console log will be displayed as shown below:
-
-  ![Jenkins Log](images/liberty-deploy/jenkins-log.jpg)
-
-4. Return to the OpenShift Console and track the progress of the pipeline
-
-  ![Running](images/liberty-deploy/pipeline-running.jpg)
-
-5. The pipeline will eventually stop at the **Promotion Gate** for approval to deploy to Production. Click the **Input Required** link as shown below
-
-  ![Gate](images/liberty-deploy/gate.jpg)
-
-6. When the *Promote application to Production* question is displayed, click **Proceed**
-
-  ![Promote](images/twas-deploy/promote.jpg)
-
-7. Return to the OpenShift Console and validate that the pipeline is now complete
-
-  ![Complete](images/liberty-deploy/complete.jpg)
-
-## Validate the Application on 3.11
-Now that the pipeline is complete, validate the Customer Order Services application is deployed and running in `dev`, `stage` and `prod`
-
-1. In the OpenShift Console, navigate to **Application Console --> Customer Order Services on Liberty - Dev --> Applications --> Deployments** and click on the link in the **Latest Version** column
-
-  ![Deployment](images/liberty-deploy/deployment.jpg)
-
-2. Information about the deployment will be displayed including the **image** that is being used (note the **tag** on the image as it will be the same in the `stage` and `prod` deployments). After a few minutes the container will be marked as **ready**
-
-  ![Pods](images/liberty-deploy/pods.jpg)
-
-3. Click **Applications --> Routes** and click on the **route** for the application. Note that the URL is < application_name >-< project_name >.< ocp cluster url >. In this case the project name is `cos-liberty-dev`
-
-  ![Route](images/liberty-deploy/route.jpg)
-
-4. Add `/CustomerOrderServicesWeb` to the end of the URL in the browser to access the application
-
-  ![Dev Running](images/liberty-deploy/dev-running.jpg)
-
-5. Log in to the application with `username: rbarcia` and `password: bl0wfish`
-
-6. Repeat the validations for the `stage` and `prod` Projects.
 
 ### Run the pipeline on 4.x
 The newly created pipeline can be started from the Red Hat OpenShift console which allows access to the Jenkins logs but also tracks the progress in the OCP console.
