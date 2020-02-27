@@ -1,0 +1,35 @@
+apiVersion: tekton.dev/v1alpha1
+kind: ClusterTask
+metadata:
+  name: gse-apply-manifests-pvc-task
+spec:
+  inputs:
+    resources:
+      - type: image
+        name: image
+      - name: source
+        type: git
+    params:
+      - name: manifest_dir
+        description: The directory in source that contains yaml manifests
+        type: string
+        default: "k8s"
+
+  steps:
+    - name: apply
+      image: quay.io/openshift/origin-cli:latest
+      workingDir: /workspace/source
+      command: ["/bin/bash", "-c"]
+      args:
+        - |-
+          set -e
+          SHORT_GIT_HASH=$(cat .git/FETCH_HEAD | awk '{print substr($1,0,7)}')
+          NEW_IMAGE=$(inputs.resources.image.url):$SHORT_GIT_HASH
+          echo Setting image to $NEW_IMAGE
+          echo -----------------------------------
+          echo Updaing manifests in $(inputs.params.manifest_dir) directory
+          sed -i "s|<DOCKER_IMAGE>|${NEW_IMAGE}|g" ./$(inputs.params.manifest_dir)/deployment.yaml
+          echo -----------------------------------
+          echo Applying manifests in $(inputs.params.manifest_dir) directory
+          oc apply -f $(inputs.params.manifest_dir)
+          echo -----------------------------------

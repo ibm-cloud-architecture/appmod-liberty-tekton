@@ -1,0 +1,55 @@
+apiVersion: tekton.dev/v1alpha1
+kind: ClusterTask
+metadata:
+  name: gse-buildah-pvc-task
+spec:
+  inputs:
+    params:
+      - name: BUILDER_IMAGE
+        description: The location of the buildah builder image.
+        default: quay.io/buildah/stable:v1.11.0
+      - name: DOCKERFILE
+        description: Path to the Dockerfile to build.
+        default: ./Dockerfile
+      - name: CONTEXT
+        description: Path to the directory to use as context.
+        default: .
+      - name: TLSVERIFY
+        description: Verify the TLS on the registry endpoint (for push/pull to a non-TLS registry)
+        default: "false"
+    resources:
+      - name: source
+        type: git
+  outputs:
+    resources:
+      - name: image
+        type: image
+      - name: source
+        type: git
+  steps:
+    - name: build
+      image: $(inputs.params.BUILDER_IMAGE)
+      volumeMounts:
+        - mountPath: /var/lib/containers
+          name: varlibcontainers
+      workingDir: /workspace/source
+      command: ["/bin/bash"]
+      args:
+        - -c
+        - |
+          set -e
+          SHORT_GIT_HASH=$(cat .git/FETCH_HEAD | awk '{print substr($1,0,7)}')
+          echo "SHORT_GIT_HASH = $SHORT_GIT_HASH"
+          echo Building Image $(outputs.resources.image.url):$SHORT_GIT_HASH
+          echo -----------------------------------
+          echo Copying git source to /workspace/output/
+          cp -R /workspace/source /workspace/output/
+          echo -----------------------------------
+          buildah bud --tls-verify=$(inputs.params.TLSVERIFY) --layers -f $(inputs.params.DOCKERFILE) -t $(outputs.resources.image.url):$SHORT_GIT_HASH $(inputs.params.CONTEXT)
+          echo Pushing Image $(outputs.resources.image.url):$SHORT_GIT_HASH
+          buildah push --tls-verify=$(inputs.params.TLSVERIFY) $(outputs.resources.image.url):$SHORT_GIT_HASH docker://$(outputs.resources.image.url):$SHORT_GIT_HASH
+      securityContext:
+        privileged: true
+  volumes:
+    - emptyDir: {}
+      name: varlibcontainers

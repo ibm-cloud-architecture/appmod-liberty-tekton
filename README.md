@@ -171,6 +171,96 @@ The steps were:
 ## Deploy the Application using Tekton (OpenShift Pipelines)
 The following steps will deploy the modernized Customer Order Services application in a WebSphere Liberty container to a Red Hat OpenShift cluster.
 
+### Prerequisites
+You will need the following:
+
+- [Git CLI](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git)
+- Red Hat OpenShift Container Platfrom 4.3 with Cluster Admin permissions
+- [oc CLI](https://docs.openshift.com/container-platform/3.11/cli_reference/get_started_cli.html)
+- DB2 Database
+- Red Hat OpenShift Pipelines **ADD A LINK TO INSTALL**
+- Tekton CLI **ADD A LINK TO INSTALL**
+
+### Getting the project repository
+You can clone the repository from its main GitHub repository page and checkout the appropriate branch for this version of the application.
+
+```
+git clone https://github.com/ibm-cloud-architecture/appmod-liberty-tekton.git
+cd appmod-liberty-tekton
+```
+
+### Create application database infrastructure
+As said in the prerequisites section above, the Customer Order Services application uses uses DB2 as its database. Follow these steps to create the appropriate database, tables and data the application needs to:
+
+1. Copy the createOrderDB.sql and initialDataSet.sql files you can find in the Common directory of this repository over to the db2 host machine (or git clone the repository) in order to execute them later.
+
+2. ssh into the db2 host
+
+3. Change to the db2 instance user: `su {database_instance_name}``
+
+4. Start db2: `db2start`
+
+4. Create the ORDERDB database: `db2 create database ORDERDB`
+
+5. Connect to the ORDERDB database: `db2 connect to ORDERDB`
+
+6. Execute the createOrderDB.sql script you copied over in step 1 in order to create the appropriate tables, relationships, primary keys, etc: `db2 -tf createOrderDB.sql`
+
+7. Execute the initialDataSet.sql script you copied over in step 1 to populate the ORDERDB database with the needed initial data set: `db2 -tf initialDataSet.sql`
+
+If you want to re-run the scripts, please make sure you drop the databases and create them again.
+
+### Create the Security Context Constraint
+In order to deploy and run the WebSphere Liberty Docker image in an OpenShift cluster, we first need to configure certain security aspects for the cluster. The `Security Context Constraint` provided [here](https://github.com/ibm-cloud-architecture/appmod-liberty-jenkins/blob/master/Deployment/OpenShift/ssc.yaml) grants the [service account](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/) that the WebSphere Liberty Docker container is running under the required privileges to function correctly.
+
+A **cluster administrator** can use the file provided [here](https://github.com/ibm-cloud-architecture/appmod-liberty-jenkins/blob/master/Deployment/OpenShift/ssc.yaml) with the following command to create the Security Context Constraint (SCC):
+
+```
+cd Deployment/OpenShift
+oc apply -f ssc.yaml
+```
+
+### Create the build project
+Create the project that will be used for the Tekton pipeline and the initial deployment of the application.
+
+Issue the command shown below to create the project:
+```
+oc new-project cos-liberty-tekton
+```
+
+### Create a service account
+It is a good Kubernetes practice to create a [service account](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/) for your applications. A service account provides an identity for processes that run in a Pod. In this step we will create a new service account with the name `websphere` and add the Security Context Constraint created above to it.
+
+Issue the commands shown below to create the `websphere` service account and bind the ibm-websphere-scc to it in each of the projects:
+```
+oc create serviceaccount websphere -n cos-liberty-tekton
+oc adm policy add-scc-to-user ibm-websphere-scc -z websphere -n cos-liberty-tekton
+```
+
+### Modify the gse-build-pipeline-resources.yaml file
+**come back to this**
+
+### Import the Tekton resources
+Import the Tekton `Tasks`, `Pipeline` and `PipelineResources` in to the project using the commands shown below:
+
+```
+cd ../../tekton/tekton-only
+oc apply -f gse-apply-manifests-pvc-task.yaml
+oc apply -f gse-buildah-pvc-task.yaml
+oc apply -f gse-build-deploy-pvc-pipeline.yaml
+oc apply -f gse-build-pipeline-resources.yaml
+```
+
+## Run the pipeline
+The recommended way to trigger the pipeline would be via a webhook (**link**) but for simplicity the command line can be used. Issue the command below to trigger the pipeline and accept the default values for `source` and `image`
+
+```
+tkn pipeline start  gse-build-deploy-pvc-pipeline -n cos-liberty-tekton
+```
+
+
+
+
 ## Deploy the Application using Tekton (OpenShift Pipelines) and ArgoCD
 The following steps will deploy the modernized Customer Order Services application in a WebSphere Liberty container to a Red Hat OpenShift cluster.
 
@@ -225,131 +315,85 @@ cd Deployment/OpenShift
 oc apply -f ssc.yaml
 ```
 
-### Create the projects
-Four Red Hat OpenShift projects are required in this scenario:
-- Build: this project will contain the Jenkins server and the artifacts used to build the application image  
-- Dev: this is the `development` environment for this application
-- Stage: this is the `staging` environment for this application
-- Prod: this is the `production` environment for this application
+### Create the build project
+Create the project that will be used for the Tekton pipeline and the initial deployment of the application.
 
-The file provided [here](https://github.com/ibm-cloud-architecture/appmod-liberty-jenkins/blob/master/Deployment/OpenShift/liberty-projects.yaml) contains the definitions for the four projects in a single file to make creation easier
-
-Issue the command shown below to create the projects
+Issue the command shown below to create the project:
 ```
-oc create -f liberty-projects.yaml
+oc new-project cos-liberty-tekton
+```
+
+### Create a secret for your github access token
+**come back to this**
+```
+oc apply -f dm-github-secret.yaml
+oc patch serviceaccount pipeline -p '{"secrets": [{"name": "dm-github"}]}'
 ```
 
 ### Create a service account
-It is a good Kubernetes practice to create a [service account](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/) for your applications. A service account provides an identity for processes that run in a Pod. In this step we will create a new service account with the name `websphere` in each of the `dev`, `stage` and `prod` projects and add the Security Context Constraint created above to them.
+It is a good Kubernetes practice to create a [service account](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/) for your applications. A service account provides an identity for processes that run in a Pod. In this step we will create a new service account with the name `websphere` and add the Security Context Constraint created above to it.
 
 Issue the commands shown below to create the `websphere` service account and bind the ibm-websphere-scc to it in each of the projects:
 ```
+oc create serviceaccount websphere -n cos-liberty-tekton
+oc adm policy add-scc-to-user ibm-websphere-scc -z websphere -n cos-liberty-tekton
+```
+
+### Modify the gse-build-pipeline-resources.yaml file
+**come back to this**
+
+### Import the Tekton resources
+Import the Tekton `Tasks`, `Pipeline` and `PipelineResources` in to the project using the commands shown below:
+
+```
+oc apply -f gse-apply-manifests-pvc-task.yaml
+oc apply -f gse-gitops-pvc-task.yaml
+oc apply -f gse-buildah-pvc-task.yaml
+oc apply -f gse-build-gitops-pvc-pipeline.yaml
+oc apply -f gse-build-pipeline-resources.yaml
+```
+
+### Create the dev project
+Create the project that will be used for the `development` version of the application that will be deployed by `ArgoCD`.
+
+Issue the command shown below to create the project:
+```
+oc new-project cos-liberty-dev
+```
+
+### Create a service account
+Create a `websphere` service account in the new project using the commands below:
+```
 oc create serviceaccount websphere -n cos-liberty-dev
-oc create serviceaccount websphere -n cos-liberty-stage
-oc create serviceaccount websphere -n cos-liberty-prod
 oc adm policy add-scc-to-user ibm-websphere-scc -z websphere -n cos-liberty-dev
-oc adm policy add-scc-to-user ibm-websphere-scc -z websphere -n cos-liberty-stage
-oc adm policy add-scc-to-user ibm-websphere-scc -z websphere -n cos-liberty-prod
 ```
 
-### Deploy Jenkins
-Some Red Hat OpenShift clusters are configured to automatically provision a Jenkins instance in a build project. The steps below can be used if your cluster is not configured for automatic Jenkins provisioning:
-
+### Update the service account
+In order to `pull` the image that is created by the pipeline (which is in the `cos-liberty-tekton` namespace) a `role` must be added to the service account using the command shown below:
 ```
-oc project cos-liberty-build
-oc new-app jenkins-persistent
+oc policy add-role-to-group system:image-puller system:serviceaccounts:cos-liberty-dev --namespace=cos-liberty-tekton
 ```
 
-## Update the Jenkins service account
-During provisioning of the Jenkins master a service account with the name `jenkins` is created. This service account has privileges to create new artifacts only in the project that it is running in. In this scenario Jenkins will need to create artifacts in the `dev`, `stage` and `prod` projects.
-
-Issue the commands below to allow the `jenkins` service account to `edit` artifacts in the `dev`, `stage` and `prod` projects.
-
+### Update the argocd service account
+Use the command below to grant the `argocd-application-controller` access to the `cos-liberty-dev` namespace to make changes:
 ```
-oc policy add-role-to-user edit system:serviceaccount:cos-liberty-build:jenkins -n cos-liberty-dev
-oc policy add-role-to-user edit system:serviceaccount:cos-liberty-build:jenkins -n cos-liberty-stage
-oc policy add-role-to-user edit system:serviceaccount:cos-liberty-build:jenkins -n cos-liberty-prod
-```
-
-## Update the dev, stage and prod service accounts
-The service accounts in the `dev`, `stage` and `prod` namespaces will need to be able to pull images created by the Jenkins process from the `build` namespace.
-
-Issue the commands below to add the `image-puller` role to the service accounts in the `dev`, `stage` and `prod` projects.
-
-```
-oc policy add-role-to-group system:image-puller system:serviceaccounts:cos-liberty-dev --namespace=cos-liberty-build
-oc policy add-role-to-group system:image-puller system:serviceaccounts:cos-liberty-stage --namespace=cos-liberty-build
-oc policy add-role-to-group system:image-puller system:serviceaccounts:cos-liberty-prod --namespace=cos-liberty-build
-```
-
-### Import the deployment templates
-Red Hat OpenShift [templates](https://docs.openshift.com/container-platform/3.11/dev_guide/templates.html) are used to make artifact creation easier and repeatable. The template definition provided [here](https://github.com/ibm-cloud-architecture/appmod-liberty-jenkins/blob/master/Deployment/OpenShift/template-liberty-deploy.yaml) defines a Kubernetes [`Service`](https://kubernetes.io/docs/concepts/services-networking/service/), [`Route`](https://docs.openshift.com/container-platform/3.11/architecture/networking/routes.html) and [`DeploymentConfig`](https://docs.openshift.com/container-platform/3.11/architecture/core_concepts/deployments.html#deployments-and-deployment-configurations) for the CustomerOrderServices application.
-
-The `gse-liberty-deploy` template defines the following:
-- `service` listening on ports `9080`, `9443` and `9082`
-- `route` to expose the `9443` port externally
-- `DeploymentConfig` to host the WebSphere Liberty container.
-  - The `image` for the container is taken from the [`ImageStream`](https://docs.openshift.com/container-platform/3.11/dev_guide/managing_images.html) that will be populated by the Jenkins pipeline.
-  - `environment variables` are defined for the DB2 database used by the application allowing for environment specific information to be injected
-  - [Probes](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-probes/) for `liveness` and `readiness` are defined to check port 9443 is active
-  - The `securityContext` is set to allow read/write access to the filesystem and to run the container as `user 1001`
-  - The deployment will be updated if a new image is loaded to the `ImageStream` or if a change to the configuration is detected.
-
-Issue the commands below to load the template named `gse-liberty-deploy` in the `dev`, `stage` and `prod` projects.
-
-```
-oc create -f template-liberty-deploy.yaml -n cos-liberty-dev
-oc create -f template-liberty-deploy.yaml -n cos-liberty-stage
-oc create -f template-liberty-deploy.yaml -n cos-liberty-prod
-```
-
-### Create the deployment definitions
-In this step the `gse-liberty-deploy` template will be used to create a Red Hat OpenShift [application](https://docs.openshift.com/container-platform/3.11/dev_guide/application_lifecycle/new_app.html) named `cos-liberty` in the `dev`, `stage` and `prod` namespaces.
-
-The result will be:
-- `service` listening on ports `9080`, `9443` and `9082`
-- `route` to expose the `9443` port externally
-- `DeploymentConfig` to host the WebSphere Liberty container. The deployment config will wait for a `docker image` to be loaded in to the `ImageStream` by the Jenkins pipeline.
-
-Issue the following commands to create the applications from the template:
-
-```
-oc new-app gse-liberty-deploy -p APPLICATION_NAME=cos-liberty -p DB2_HOST=<your DB2 host> -p DB2_PORT=<your DB2 host> -p DB2_USER=<your DB2 user> -p DB2_PASSWORD=<your DB2 password> -n cos-liberty-dev
-oc new-app gse-liberty-deploy -p APPLICATION_NAME=cos-liberty -p DB2_HOST=<your DB2 host> -p DB2_PORT=<your DB2 host> -p DB2_USER=<your DB2 user> -p DB2_PASSWORD=<your DB2 password> -n cos-liberty-stage
-oc new-app gse-liberty-deploy -p APPLICATION_NAME=cos-liberty -p DB2_HOST=<your DB2 host> -p DB2_PORT=<your DB2 host> -p DB2_USER=<your DB2 user> -p DB2_PASSWORD=<your DB2 password> -n cos-liberty-prod
-```
-
-### Import the build templates
-In this step a template for the `build` process will be loaded in to the `build` project. The template provided [here](https://github.com/ibm-cloud-architecture/appmod-liberty-jenkins/blob/master/Deployment/OpenShift/template-liberty-build.yaml) defines the following artifacts:
-
-- An [ImageStream](https://docs.openshift.com/container-platform/3.11/dev_guide/managing_images.html) for the application image. This will be populated by the Jenkins Pipeline
-- An ImageStream for WebSphere Liberty which will pull down the latest version of the `ibmcom/websphere-liberty:kernel-ubi-min` image and will monitor DockerHub for any updates.
-- A `binary` [BuildConfig](https://docs.openshift.com/container-platform/3.11/dev_guide/builds/build_strategies.html) that will be used by the Jenkins Pipeline to build the application Docker image
-- A `jenkinsfile` BuildConfig that defines the `Pipeline` using the `Jenkinsfile` in GitHub
-- Parameters to allow the WebSphere Liberty image and GitHub repository to be provided when the template is instantiated
-
-Issue the commands below to load the template named `gse-liberty-build` in the `build` projects.
-
-```
-oc create -f template-liberty-build.yaml -n cos-liberty-build
-```
-
-### Create the build definitions
-In this step the `gse-liberty-build` template will be used to create a Red Hat OpenShift [application](https://docs.openshift.com/container-platform/3.11/dev_guide/application_lifecycle/new_app.html) named `cos-liberty` in the `build` namespaces.
-
-The result will be:
-- An [ImageStream](https://docs.openshift.com/container-platform/3.11/dev_guide/managing_images.html) for the application image. This will be populated by the Jenkins Pipeline
-- An ImageStream for WebSphere Liberty which will pull down the latest version of the `ibmcom/websphere-liberty:kernel-ubi-min` image and will monitor DockerHub for any updates.
-- A `binary` [BuildConfig](https://docs.openshift.com/container-platform/3.11/dev_guide/builds/build_strategies.html) that will be used by the Jenkins Pipeline to build the application Docker image
-- A `jenkinsfile` BuildConfig that defines the `Pipeline` using the `Jenkinsfile` in GitHub (with the URL provided as a parameter when the application is created)
-
-Issue the following commands to create the application from the template:
-
-```
-oc new-app gse-liberty-build -p APPLICATION_NAME=cos-liberty -p SOURCE_URL="https://github.com/ibm-cloud-architecture/appmod-liberty-jenkins" -p SOURCE_REF="master" -n cos-liberty-build
+oc policy add-role-to-user edit system:serviceaccount:argocd:argocd-application-controller -n cos-liberty-dev
 ```
 
 ## Run the pipeline
+The recommended way to trigger the pipeline would be via a webhook (**link**) but for simplicity the command line can be used. Issue the command below to trigger the pipeline and accept the default values for `source` and `image`
+
+```
+tkn pipeline start  gse-build-gitops-pvc-pipeline -n cos-liberty-tekton
+```
+
+
+
+
+
+
+
+
 ### For 3.11 directions [click here](#run-the-pipeline-on-311); for 4.x directions [click here](#run-the-pipeline-on-4x).
 
 ### Run the pipeline on 3.11
