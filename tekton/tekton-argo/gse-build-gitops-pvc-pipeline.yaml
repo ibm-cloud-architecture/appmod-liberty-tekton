@@ -8,6 +8,10 @@ spec:
       type: git
     - name: docker-image
       type: image
+  params:
+    - name: GITOPS_REPO
+      type: string
+      default: "https://github.com/davemulley/test-gitops.git"
   tasks:
     - name: gse-build
       taskRef:
@@ -55,7 +59,7 @@ spec:
             from: [gse-build]
       params:
         - name: GITOPS_REPO
-          value: "false"
+          value: $(params.GITOPS_REPO)
       runAfter:
         - gse-apply-manifests
           
