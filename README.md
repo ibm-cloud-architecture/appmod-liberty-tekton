@@ -219,7 +219,25 @@ When prompted, accept the default `docker-image` value as shown below:
 
   ![Pipeline Logs](images/tekton-only/run-3.jpg)
 
-4. Once both the `gse-build` and `gse-apply-manifests` steps are complete, the pipeline is finished. Proceed to the [Validate the Application](#validate-the-application-on-4x) section
+4. Once both the `gse-build` and `gse-apply-manifests` steps are complete, the pipeline is finished.
+
+### Validate the application
+Now that the pipeline is complete, validate the Customer Order Services application is deployed and running in `dev`, `stage` and `prod`
+
+1. In the OpenShift Console, navigate to **Topology** view and click on the `cos-liberty` DeploymentConfig to view deployment details, including `Pods` `Services` and `Routes`
+
+#### Topology
+  ![Deployment](images/tekton-only/validate-1.jpg)
+
+2. From this view you can also view the **route** for the application. Note that the URL is < application_name >-< project_name >.< ocp cluster url >. In this case the project name is `cos-liberty-tekton`
+
+  ![Route](images/tekton-only/route.jpg)
+
+4. Add `/CustomerOrderServicesWeb` to the end of the URL in the browser to access the application
+
+  ![Dev Running](images/liberty-deploy/dev-running.jpg)
+
+5. Log in to the application with `username: rbarcia` and `password: bl0wfish`
 
 ## Deploy the Application using OpenShift Pipelines and ArgoCD
 The following steps will deploy the modernized Customer Order Services application in a WebSphere Liberty container to a Red Hat OpenShift cluster using **OpenShift Pipelines** and **ArgoCD**.
