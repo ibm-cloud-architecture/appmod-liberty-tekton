@@ -1,0 +1,31 @@
+apiVersion: tekton.dev/v1alpha1
+kind: ClusterTask
+metadata:
+  name: gse-gitops-pvc-task
+spec:
+  inputs:
+    resources:
+      - type: image
+        name: image
+      - name: source
+        type: git
+  steps:
+    - name: gitops-step
+      image: docker.io/csantanapr/helm-kubectl-curl-git-jq-yq
+      workingDir: /workspace/source
+      command: ["/bin/bash", "-c"]
+      args:
+        - |-
+          set -e
+          SHORT_GIT_HASH=$(cat .git/FETCH_HEAD | awk '{print substr($1,0,7)}')
+          NEW_IMAGE=$(inputs.resources.image.url):$SHORT_GIT_HASH
+          echo Setting image to $NEW_IMAGE
+          git config --global user.email "tekton@ibmcloud.com"
+          git config --global user.name "Tekton Pipeline"
+          git clone -b master https://github.com/davemulley/test-gitops.git gitops
+          cd gitops/cos-liberty/dev
+          cp ./deploy.template ./deploy.yaml
+          sed -i "s|<DOCKER_IMAGE>|${NEW_IMAGE}|g" ./deploy.yaml
+          git add -u
+          git commit -m "Updating image name"
+          git push

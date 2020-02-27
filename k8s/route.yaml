@@ -1,0 +1,16 @@
+kind: Route
+apiVersion: v1
+id: cos-liberty-http
+metadata:
+  name: cos-liberty
+  annotations:
+    description: Route for application's http service.
+  labels:
+    application: cos-liberty
+spec:
+  to:
+    name: cos-liberty
+  port:
+    targetPort: 9443-tcp
+  tls:
+    termination: passthrough

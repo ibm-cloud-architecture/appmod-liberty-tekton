@@ -1,0 +1,26 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: cos-liberty
+  annotations:
+    description: The web server's http port.
+  labels:
+    application: cos-liberty
+spec:
+  ports:
+    - name: 9080-tcp
+      port: 9080
+      targetPort: 9080
+      protocol: TCP
+    - name: 9443-tcp
+      port: 9443
+      targetPort: 9443
+      protocol: TCP
+    - name: http
+      port: 9082
+      targetPort: 9082
+      protocol: TCP
+  selector:
+    deploymentConfig: cos-liberty
+  type: ClusterIP
+  sessionAffinity: None
