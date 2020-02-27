@@ -21,22 +21,9 @@ This repository holds a solution that is the result of a **runtime modernization
 - [How the Application was Modernized](#how-the-application-was-modernized)
   - [Analysis](#analysis)
   - [Build](#build)
-  - [Deploy](#deploy)
-- [Deploy the Application](#deploy-the-application)
-  - [Getting the project repository](#getting-the-project-repository)
-  - [Create the Security Context Constraint](#create-the-security-context-constraint)
-  - [Create the projects](#create-the-projects)
-  - [Create a service account](#create-a-service-account)
-  - [Deploy Jenkins](#deploy-jenkins)
-  - [Update the Jenkins service account](update-the-jenkins-service-account)
-  - [Import the deployment templates](#import-the-deployment-templates)
-  - [Create the deployment definitions](#create-the-deployment-definitions)
-  - [Import the build templates](#import-the-build-templates)
-  - [Create the build definitions](#create-the-build-definitions)
-  - [Run the pipeline on OpenShift 3.11](#run-the-pipeline-on-311)
-  - [Run the pipeline on OpenShift 4.x](#run-the-pipeline-on-4x)
-- [Validate the Application on 3.11](#validate-the-application-on-311)
-- [Validate the Application on 4.x](#validate-the-application-on-4x)
+- [Deploy the Application using OpenShift Pipelines](#deploy-the-application-using-openshift-pipelines)
+- [Deploy the Application using OpenShift Pipelines and ArgoCD](#deploy-the-application-using-openshift-pipelines-and-argocd)
+- [Validate the Application](#validate-the-application-on-4x)
 - [Summary](#summary)
 
 ## Application Overview
@@ -122,53 +109,7 @@ The **build** phase made changes to source code and created the WebSphere Libert
 
 Detailed, step-by-step instructions on how to replicate these steps are provided [here](liberty-build.md)
 
-### Deploy with Tekton
-**NEED A DESCRIPTION**
-
-**NEED A DIAGRAM**
-
-The steps were:
-
-1. Configure the Red Hat OpenShift Cluster for WebSphere by creating the necessary `SecurityContextConstraints` definition. The file can be found here:
-
-- [scc.yaml](https://github.com/ibm-cloud-architecture/appmod-liberty-jenkins/blob/master/Deployment/OpenShift/ssc.yaml)
-
-
-### Deploy with Tekton and Argo
-**NEED A DESCRIPTION**
-
-**NEED A DIAGRAM**
-
-The steps were:
-
-1. Configure the Red Hat OpenShift Cluster for WebSphere by creating the necessary `SecurityContextConstraints` definition. The file can be found here:
-
-- [scc.yaml](https://github.com/ibm-cloud-architecture/appmod-liberty-jenkins/blob/master/Deployment/OpenShift/ssc.yaml)
-
-2. Create a Tekton task to compile the application code, use **buildah** to create a Docker image and then push that Docker image to the OpenShift Image Registry
-- [gse-buildah-pvc-task.yaml](https://github.com/ibm-cloud-architecture/appmod-liberty-jenkins/blob/master/tekton/tekton-argo/gse-buildah-pvc-task.yaml)
-
-3. Create a Tekton task to deploy the application to the `build` namespace using `oc` commands
-- [gse-apply-manifests-pvc-task.yaml](https://github.com/ibm-cloud-architecture/appmod-liberty-jenkins/blob/master/tekton/tekton-argo/gse-apply-manifests-pvc-task.yaml)
-
-4. Create a Tekton task to update the `gitops` repository with the current Docker image tag ready for ArgoCD to sync
-- [gse-gitops-pvc-task.yaml](https://github.com/ibm-cloud-architecture/appmod-liberty-jenkins/blob/master/tekton/tekton-argo/gse-gitops-pvc-task.yaml)
-
-5. Create a Tekton pipeline to orchestrate the Tekton tasks to build and deploy the application
-- [gse-build-gitops-pvc-pipeline.yaml](https://github.com/ibm-cloud-architecture/appmod-liberty-jenkins/blob/master/tekton/tekton-argo/gse-build-gitops-pvc-pipeline.yaml)
-
-6. Create a Tekton pipeline resources file to provide default values for the Tekton pipeline
-- [gse-build-pipeline-resources.yaml](https://github.com/ibm-cloud-architecture/appmod-liberty-jenkins/blob/master/tekton/tekton-argo/gse-build-pipeline-resources.yaml)
-
-7. Create the `build` project and load the Tekton resources
-
-8. Create the `dev` project
-
-9. Configure ArgoCD
-
-10. Verify the pipeline.
-
-## Deploy the Application using Tekton (OpenShift Pipelines)
+## Deploy the Application using OpenShift Pipelines
 The following steps will deploy the modernized Customer Order Services application in a WebSphere Liberty container to a Red Hat OpenShift cluster.
 
 ### Prerequisites
@@ -255,7 +196,7 @@ The recommended way to trigger the pipeline would be via a webhook (**link**) bu
 tkn pipeline start  gse-build-deploy-pvc-pipeline -n cos-liberty-tekton
 ```
 
-## Deploy the Application using Tekton (OpenShift Pipelines) and ArgoCD
+## Deploy the Application using OpenShift Pipelines and ArgoCD
 The following steps will deploy the modernized Customer Order Services application in a WebSphere Liberty container to a Red Hat OpenShift cluster.
 
 ### Prerequisites

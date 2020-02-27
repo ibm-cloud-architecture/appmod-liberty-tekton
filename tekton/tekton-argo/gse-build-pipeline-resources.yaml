@@ -18,6 +18,6 @@ items:
     - name: revision
       value: master
     - name: url
-      value: http://github.com/davemulley/cloudpak-for-applications-tekton
+      value: http://github.com/ibm-cloud-architecture/appmod-liberty-tekton
     type: git
 kind: List
