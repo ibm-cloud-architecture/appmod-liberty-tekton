@@ -237,9 +237,6 @@ oc create serviceaccount websphere -n cos-liberty-tekton
 oc adm policy add-scc-to-user ibm-websphere-scc -z websphere -n cos-liberty-tekton
 ```
 
-### Modify the gse-build-pipeline-resources.yaml file
-**come back to this**
-
 ### Import the Tekton resources
 Import the Tekton `Tasks`, `Pipeline` and `PipelineResources` in to the project using the commands shown below:
 
@@ -257,9 +254,6 @@ The recommended way to trigger the pipeline would be via a webhook (**link**) bu
 ```
 tkn pipeline start  gse-build-deploy-pvc-pipeline -n cos-liberty-tekton
 ```
-
-
-
 
 ## Deploy the Application using Tekton (OpenShift Pipelines) and ArgoCD
 The following steps will deploy the modernized Customer Order Services application in a WebSphere Liberty container to a Red Hat OpenShift cluster.
