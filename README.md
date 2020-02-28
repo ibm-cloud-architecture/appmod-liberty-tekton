@@ -112,6 +112,13 @@ Detailed, step-by-step instructions on how to replicate these steps are provided
 ## Deploy the Application using OpenShift Pipelines
 The following steps will deploy the modernized Customer Order Services application in a WebSphere Liberty container to a Red Hat OpenShift cluster using **OpenShift Pipelines**. An alternative is to use **ArgoCD** for deployment. Click here to see the [Deploy the Application using OpenShift Pipelines and ArgoCD](#deploy-the-application-using-openshift-pipelines-and-argocd) option
 
+The diagram below shows the following flow:
+
+1) A developer commits code to the `application repository`
+2) A webhook starts a `tekton pipeline` running in the `build` project
+3) A `tekton task` clones the application source code (4) from the application repository, uses `Maven` to compile and test the application before using `buildah` to create a `Docker image` which is pushed to the docker registry (5)
+6) A `tekton task` deploys the `application` to the local namespace using the image from the `docker registry` (7)
+
   ![Pipeline](images/tekton-flow.jpg)
 
 ### Prerequisites
@@ -241,6 +248,16 @@ Now that the pipeline is complete, validate the Customer Order Services applicat
 
 ## Deploy the Application using OpenShift Pipelines and ArgoCD
 The following steps will deploy the modernized Customer Order Services application in a WebSphere Liberty container to a Red Hat OpenShift cluster using **OpenShift Pipelines** and **ArgoCD**.
+
+The diagram below shows the following flow:
+
+1) A developer commits code to the `application repository`
+2) A webhook starts a `tekton pipeline` running in the `build` project
+3) A `tekton task` clones the application source code (4) from the application repository, uses `Maven` to compile and test the application before using `buildah` to create a `Docker image` which is pushed to the docker registry (5)
+6) A `tekton task` deploys the `application` to the local namespace using the image from the `docker registry` (7)
+8) A `tekton task` updates the `gitops repository` with the `docker image tag` for the newly created docker image and commits the change (9)
+10) ArgoCD is used to `synchronize` the changes from the gitops repository with the `dev` namespace
+11) The application running in the `dev` namespace is updated with the latest docker image from the registry
 
   ![Pipeline](images/argo-flow.jpg)
 
