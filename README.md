@@ -129,7 +129,7 @@ You will need the following:
 - [oc CLI](https://docs.openshift.com/container-platform/3.11/cli_reference/get_started_cli.html)
 - DB2 Database
 - Red Hat OpenShift Pipelines **ADD A LINK TO INSTALL**
-- Tekton CLI **ADD A LINK TO INSTALL**
+- [Tekton CLI](https://github.com/tektoncd/cli)
 
 ### Getting the project repository
 You can clone the repository from its main GitHub repository page and checkout the appropriate branch for this version of the application.
@@ -269,9 +269,9 @@ You will need the following:
 - [oc CLI](https://docs.openshift.com/container-platform/3.11/cli_reference/get_started_cli.html)
 - DB2 Database
 - Red Hat OpenShift Pipelines **ADD A LINK TO INSTALL**
-- Tekton CLI **ADD A LINK TO INSTALL**
+- [Tekton CLI](https://github.com/tektoncd/cli)
 - ArgoCD **ADD A LINK TO INSTALL**
-- argocd CLI **ADD A LINK TO INSTALL**
+- [ArgoCD CLI](https://argoproj.github.io/argo-cd/cli_installation/)
 
 ### Fork the appmod-gitops repository
 Fork the [appmod-gitops](https://github.com/ibm-cloud-architecture/appmod-gitops) GitHub repository in to your own github.com account
