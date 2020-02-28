@@ -12,7 +12,7 @@ spec:
     - name: gse-build
       taskRef:
         name: gse-buildah-pvc-task
-        kind: ClusterTask
+        kind: Task
       resources:
         inputs:
           - name: source
@@ -29,7 +29,7 @@ spec:
     - name: gse-apply-manifests
       taskRef:
         name: gse-apply-manifests-pvc-task
-        kind: ClusterTask
+        kind: Task
       resources:
         inputs:
           - name: source
