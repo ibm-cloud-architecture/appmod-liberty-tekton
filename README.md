@@ -112,7 +112,7 @@ Detailed, step-by-step instructions on how to replicate these steps are provided
 ## Deploy the Application using OpenShift Pipelines
 The following steps will deploy the modernized Customer Order Services application in a WebSphere Liberty container to a Red Hat OpenShift cluster using **OpenShift Pipelines**. An alternative is to use **ArgoCD** for deployment. Click here to see the [Deploy the Application using OpenShift Pipelines and ArgoCD](#deploy-the-application-using-openshift-pipelines-and-argocd) option
 
-**DIAGRAM**
+  ![Pipeline](images/tekton-flow.jpg)
 
 ### Prerequisites
 You will need the following:
@@ -241,6 +241,8 @@ Now that the pipeline is complete, validate the Customer Order Services applicat
 
 ## Deploy the Application using OpenShift Pipelines and ArgoCD
 The following steps will deploy the modernized Customer Order Services application in a WebSphere Liberty container to a Red Hat OpenShift cluster using **OpenShift Pipelines** and **ArgoCD**.
+
+  ![Pipeline](images/argo-flow.jpg)
 
 ### Prerequisites
 You will need the following:
