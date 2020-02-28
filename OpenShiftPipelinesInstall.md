@@ -3,7 +3,7 @@ Installing OpenShift Pipelines (Tekton) in OCP 4.3
 ## Introduction
 Openshift Container Platform (OCP) 4.3 has started the transition from Jenkins to Tekton as the foundation for OpenShift Pipelines. This document covers the installation and configuration of the OpenShift Pipelines operator in OCP 4.3
 
-## Installation of the OpenShift Pipelines Operation in OCP 4.3
+## Installation of the OpenShift Pipelines Operator in OCP 4.3
 
 - In the OCP UI (as a Cluster-Administrator) click **Operators --> OperatorHub**
 
