@@ -211,7 +211,7 @@ When prompted, accept the default `docker-image` value as shown below:
 
   ![Pipeline](images/tekton-only/run-1.jpg)
 
-2. Select **Builds** and then select `cos-liberty-pipeline`
+2. Select **Logs**
 
   ![Pipeline Logs](images/tekton-only/run-2.jpg)
 
@@ -222,7 +222,7 @@ When prompted, accept the default `docker-image` value as shown below:
 4. Once both the `gse-build` and `gse-apply-manifests` steps are complete, the pipeline is finished.
 
 ### Validate the application
-Now that the pipeline is complete, validate the Customer Order Services application is deployed and running in `dev`, `stage` and `prod`
+Now that the pipeline is complete, validate the Customer Order Services application is deployed and running in `cos-liberty-tekton` project
 
 1. In the OpenShift Console, navigate to **Topology** view and click on the `cos-liberty` DeploymentConfig to view deployment details, including `Pods` `Services` and `Routes`
 
@@ -402,71 +402,86 @@ Use the command below to grant the `argocd-application-controller` access to the
 oc policy add-role-to-user edit system:serviceaccount:argocd:argocd-application-controller -n cos-liberty-dev
 ```
 
+### Configure ArgoCD
+In this step you will import a defintion of the cos-liberty application in to ArgoCD
+
+1. Log in to ArgoCD using the CLI as the admin user.
+```
+argocd login --insecure <url of your argocd server>
+```
+
+2. Edit the `tekton/tekton-argo/argo-project.yaml` file and set your `repoURL` (to the URL of your forked repository from earlier)
+```
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: cos-liberty
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/davemulley/test-gitops
+    path: cos-liberty/dev
+    targetRevision: HEAD
+    directory:
+      recurse: true
+      jsonnet: {}
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: cos-liberty-dev
+```
+
+3. Execute the following command to create the application definition in ArgoCD
+```
+argocd app create cos-liberty -f argo-project.yaml
+```
+
+4. Log in to the ArgoCD UI as the `admin` user and validate that the application is shown on the **Applications** view
+
+  ![Pipeline](images/tekton-argo/argo-0.jpg)
+
+
 ## Run the pipeline
-The recommended way to trigger the pipeline would be via a webhook (**link**) but for simplicity the command line can be used. Issue the command below to trigger the pipeline and accept the default values for `source` and `image`
+The recommended way to trigger the pipeline would be via a webhook (**link**) but for simplicity the command line can be used. Issue the command below (replace the `GITOPS_REPO` value with the URL of your forked repository from earlier) to trigger the pipeline and accept the default values for `source` and `image`
 
 ```
-tkn pipeline start  gse-build-gitops-pvc-pipeline -n cos-liberty-tekton
+tkn pipeline start  gse-build-gitops-pvc-pipeline -p GITOPS_REPO="https://github.com/davemulley/test-gitops.git" -n cos-liberty-tekton
 ```
 
+When prompted, accept the default `git-source` value as shown below:
 
+  ![Pipeline](images/tekton-only/start-1.jpg)
 
+When prompted, accept the default `docker-image` value as shown below:
 
+  ![Pipeline1](images/tekton-only/start-2.jpg)
 
+### View the pipeline logs
+1. In the OpenShift Container Platform UI, change to the **Developer** view, select the `cos-liberty-tekton` project and then select **Pipelines**. Click on the **Last Run**
 
+  ![Pipeline](images/tekton-argo/run-1.jpg)
 
+2. Select **Logs**
 
+  ![Pipeline Logs](images/tekton-argo/run-2.jpg)
 
-### Run the pipeline on 4.x
-The newly created pipeline can be started from the Red Hat OpenShift console which allows access to the Jenkins logs but also tracks the progress in the OCP console.
+3. The pipeline will execute and the logs will be displayed
 
-1. In the OpenShift Container Platform UI, change to the **Developer** view, select the `cos-liberty-build` project.
+  ![Pipeline Logs](images/tekton-argo/run-3.jpg)
 
-2. Select **Builds** anf then select `cos-liberty-pipeline`
+4. Once both the `gse-build`, `gse-apply-manifests` and `gse-gitops` steps are complete, the pipeline is finished.
 
-3. Click the **Start Build** button from the **Actions** dropdown
+### Validate the application in the pipeline namespace
+Now that the pipeline is complete, validate the Customer Order Services application is deployed and running in `cos-liberty-tekton` project
 
-  ![Run Pipeline](images/liberty-deploy/4.x-build-pipeline.jpg)
-
-4. When the pipeline starts, click the `view log` link to go to the Jenkins administration console. Note that it may take a couple of minutes before the `view log` link appears on the first pipeline build
-
-  ![View Log](images/liberty-deploy/4.x-view-log.jpg)
-
-5. When prompted, log in with your OpenShift account and grant the required access permissions. The Jenkins console log will be displayed as shown below:
-
-  ![Jenkins Log](images/liberty-deploy/jenkins-log.jpg)
-
-6. Return to the OpenShift Console and track the progress of the pipeline
-
-  ![Running](images/liberty-deploy/4.x-pipeline-running.jpg)
-
-5. The pipeline will eventually stop at the **Promotion Gate** for approval to deploy to Production. Click the **Input Required** link as shown below
-
-  ![Gate](images/liberty-deploy/4.x-gate.jpg)
-
-6. When the *Promote application to Production* question is displayed, click **Proceed**
-
-  ![Promote](images/liberty-deploy/4.x-promote.jpg)
-
-7. Return to the OpenShift Console and validate that the pipeline is now complete
-
-  ![Complete](images/liberty-deploy/4.x-complete.jpg)
-
-## Validate the Application on 4.x
-Now that the pipeline is complete, validate the Customer Order Services application is deployed and running in `dev`, `stage` and `prod`
-
-1. In the OpenShift Console, navigate to **Topology** view and click on the cos-liberty pod to view pod details, including images
+1. In the OpenShift Console, navigate to **Topology** view and click on the `cos-liberty` DeploymentConfig to view deployment details, including `Pods` `Services` and `Routes`
 
 #### Topology
-  ![Deployment](images/liberty-deploy/4.x-deployment.jpg)
+  ![Deployment](images/tekton-only/validate-1.jpg)
 
-#### Containers
+2. From this view you can also view the **route** for the application. Note that the URL is < application_name >-< project_name >.< ocp cluster url >. In this case the project name is `cos-liberty-tekton`
 
-![Deployment](images/liberty-deploy/4.x-pods.jpg)
-
-3. From the Topography view, you can also view the **route** for the application. Note that the URL is < application_name >-< project_name >.< ocp cluster url >. In this case the project name is `cos-liberty-dev`
-
-  ![Route](images/liberty-deploy/4.x-routes.jpg)
+  ![Route](images/tekton-only/route.jpg)
 
 4. Add `/CustomerOrderServicesWeb` to the end of the URL in the browser to access the application
 
@@ -474,7 +489,40 @@ Now that the pipeline is complete, validate the Customer Order Services applicat
 
 5. Log in to the application with `username: rbarcia` and `password: bl0wfish`
 
-6. Repeat the validations for the `stage` and `prod` Projects.
+### Trigger the ArgoCD synchronization of the dev namespace
+1. In the ArgoCD UI, navigate to the **applications** view and click **SYNC** on the `cos-liberty` application
+
+  ![Pipeline](images/tekton-argo/argo-1.jpg)
+
+2. On the panel that is displayed, click **SYNCHRONIZE** to synchronize all of the artifacts in to the `cos-liberty-dev` namespace
+
+  ![Pipeline](images/tekton-argo/argo-2.jpg)
+
+3. Note that the **Status** is quickly shown as **Healthy, Synced**
+
+  ![Pipeline](images/tekton-argo/argo-3.jpg)
+
+4. Click on the **cos-liberty** application to drill-down to the more detailed view and note that the `deploymentconfig`, `service` and `route` have been created. Watch the application pod on the right be deployed and after a short while show as running
+
+  ![Pipeline](images/tekton-argo/arg0-4.jpg)
+
+### Validate the application in the dev namespace
+1. In the OpenShift Console, navigate to the **cos-liberty-dev** project
+
+2. Now navigate to the **Topology** view and click on the `cos-liberty` DeploymentConfig to view deployment details, including `Pods` `Services` and `Routes`
+
+#### Topology
+  ![Deployment](images/tekton-argo/run-4.jpg)
+
+3. From this view you can also view the **route** for the application. Note that the URL is < application_name >-< project_name >.< ocp cluster url >. In this case the project name is `cos-liberty-dev`
+
+  ![Route](images/tekton-argo/run-5.jpg)
+
+4. Add `/CustomerOrderServicesWeb` to the end of the URL in the browser to access the application
+
+  ![Dev Running](images/liberty-deploy/dev-running.jpg)
+
+5. Log in to the application with `username: rbarcia` and `password: bl0wfish`
 
 ## Summary
 This application has been modified from the initial [WebSphere ND v8.5.5 version](https://github.com/ibm-cloud-architecture/cloudpak-for-applications/tree/was855) to run on WebSphere Liberty and deployed by the IBM CloudPak for Applications.
