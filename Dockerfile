@@ -3,7 +3,7 @@ COPY . /project
 WORKDIR /project/CustomerOrderServicesProject
 RUN mvn clean package
   
-FROM ibmcom/websphere-liberty:kernel-ubi
+FROM ibmcom/websphere-liberty:kernel-java8-ibmjava-ubi
  
 ARG SSL=false
 ARG MP_MONITORING=false
