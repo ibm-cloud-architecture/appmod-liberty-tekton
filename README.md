@@ -1,1 +1,1 @@
-Please view this repo from: https://ibm-cloud-architecture.github.io/cloudpak-for-applications/liberty
+Please view this repo from: https://ibm-cloud-architecture.github.io/modernization-playbook/applications/liberty
