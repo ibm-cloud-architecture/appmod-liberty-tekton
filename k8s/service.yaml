@@ -17,8 +17,8 @@ spec:
       targetPort: 9443
       protocol: TCP
     - name: http
-      port: 9082
-      targetPort: 9082
+      port: 9081
+      targetPort: 9081
       protocol: TCP
   selector:
     deploymentConfig: cos-liberty

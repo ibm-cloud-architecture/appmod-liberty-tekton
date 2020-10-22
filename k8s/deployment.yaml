@@ -57,7 +57,7 @@ spec:
             - containerPort: 9443
               name: 9443-tcp
               protocol: TCP
-            - containerPort: 9082
+            - containerPort: 9081
               name: http
               protocol: TCP
           readinessProbe:

@@ -11,6 +11,6 @@ spec:
   to:
     name: cos-liberty
   port:
-    targetPort: 9443-tcp
+    targetPort: 9080-tcp
   tls:
-    termination: passthrough
+    termination: edge
